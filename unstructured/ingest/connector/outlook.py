@@ -229,13 +229,13 @@ class OutlookConnector(ConnectorCleanupMixin, BaseConnector):
             if messages:
                 filtered_messages.append(messages)
 
-        # Filtered messages have an un-downloadable resource path.
-        # So we get each message object individually.
-        individual_messages = []
-        for m in list(chain.from_iterable(filtered_messages)):
-            messages = (
-                self.client.users[self.config.user_email].messages[m.id].get().execute_query()
-            )
-            individual_messages.append(messages)
+        # # Filtered messages have an un-downloadable resource path.
+        # # So we get each message object individually.
+        # individual_messages = []
+        # for m in list(chain.from_iterable(filtered_messages)):
+        #     messages = (
+        #         self.client.users[self.config.user_email].messages[m.id].get().execute_query()
+        #     )
+        #     individual_messages.append(messages)
         # return [OutlookIngestDoc(self.standard_config, self.config, f) for f in individual_messages]
         return [OutlookIngestDoc(self.standard_config, self.config, m.id) for m in list(chain.from_iterable(filtered_messages))]
