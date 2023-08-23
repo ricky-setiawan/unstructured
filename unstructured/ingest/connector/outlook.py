@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from itertools import chain
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Dict, Optional
 
 from office365.onedrive.driveitems.driveItem import DriveItem
 
@@ -73,10 +73,18 @@ class SimpleOutlookConfig(BaseConnectorConfig):
 @dataclass
 class OutlookIngestDoc(IngestDocCleanupMixin, BaseIngestDoc):
     config: SimpleOutlookConfig
-    file: DriveItem
+    # file: Dict[Any,Any]
+    message_id: str
 
     def __post_init__(self):
         self._set_download_paths()
+        self._set_client() # might put this in config
+    
+    @requires_dependencies(["office365"])
+    def _set_client(self):
+        from office365.graph_client import GraphClient
+
+        self.client = GraphClient(self.config.token_factory)
 
     def hash_mail_name(self, id):
         """Outlook email ids are 152 char long. Hash to shorten to 16."""
@@ -89,9 +97,9 @@ class OutlookIngestDoc(IngestDocCleanupMixin, BaseIngestDoc):
 
         self.download_dir = download_path
         self.download_filepath = (
-            download_path / f"{self.hash_mail_name(self.file.id)}.eml"
+            download_path / f"{self.hash_mail_name(self.message_id)}.eml"
         ).resolve()
-        oname = f"{self.hash_mail_name(self.file.id)}.eml.json"
+        oname = f"{self.hash_mail_name(self.message_id)}.eml.json"
         self.output_dir = output_path
         self.output_filepath = (output_path / oname).resolve()
 
@@ -115,21 +123,24 @@ class OutlookIngestDoc(IngestDocCleanupMixin, BaseIngestDoc):
             with open(
                 os.path.join(
                     self.download_dir,
-                    self.hash_mail_name(self.file.id) + ".eml",
+                    self.hash_mail_name(self.message_id) + ".eml",
                 ),
                 "wb",
             ) as local_file:
-                self.file.download(
-                    local_file,
-                ).execute_query()  # download MIME representation of a message
+                self.client.users[self.config.user_email].messages[self.message_id].download(local_file).execute_query()
+                # breakpoint()
+
+                # self.file.download(
+                #     local_file,
+                # ).execute_query()  # download MIME representation of a message
 
         except Exception as e:
             logger.error(
-                f"Error while downloading and saving file: {self.file.subject}.",
+                f"Error while downloading and saving file: {self.hash_mail_name(self.message_id)}.",
             )
             logger.error(e)
             return
-        logger.info(f"File downloaded: {self.file.subject}")
+        logger.info(f"File downloaded: {self.hash_mail_name(self.message_id)}")
         return
 
 
@@ -226,5 +237,5 @@ class OutlookConnector(ConnectorCleanupMixin, BaseConnector):
                 self.client.users[self.config.user_email].messages[m.id].get().execute_query()
             )
             individual_messages.append(messages)
-
-        return [OutlookIngestDoc(self.standard_config, self.config, f) for f in individual_messages]
+        # return [OutlookIngestDoc(self.standard_config, self.config, f) for f in individual_messages]
+        return [OutlookIngestDoc(self.standard_config, self.config, m.id) for m in list(chain.from_iterable(filtered_messages))]
