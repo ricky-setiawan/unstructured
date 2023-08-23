@@ -6,7 +6,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Any, List, Dict, Optional
 
-from office365.onedrive.driveitems.driveItem import DriveItem
+# from office365.onedrive.driveitems.driveItem import DriveItem
 
 from unstructured.ingest.interfaces import (
     BaseConnector,
