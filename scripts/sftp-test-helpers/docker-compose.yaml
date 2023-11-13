@@ -3,11 +3,10 @@ services:
     image: atmoz/sftp
     container_name: sftp-test
     ports:
-      - 9000:9000
-      - 9001:9001
-    command: server --console-address ":9001" /data
+      - "47474:22"
+    command: foo:pass:::upload
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 20s
+      test: ["CMD-SHELL", "ssh -o 'BatchMode=true' -o 'StrictHostKeyChecking=no' healthcheck-invlaid@localhost 2>&1 | grep -q 'Permission denied'"]
+      interval: 30s
+      timeout: 10s
       retries: 3
