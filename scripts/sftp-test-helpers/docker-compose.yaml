@@ -1,0 +1,13 @@
+services:
+  sftp:
+    image: atmoz/sftp
+    container_name: sftp-test
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 20s
+      retries: 3
