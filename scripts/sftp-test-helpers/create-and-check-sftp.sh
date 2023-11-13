@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
 function upload(){
-    docker cp "$SCRIPT_DIR"/wiki_movie_plots_small.csv sftp-test:/home/foo/upload/
+    docker cp "$SCRIPT_DIR"/folder1/ sftp-test:/home/foo/upload/
 }
 
 # Create sftp server
