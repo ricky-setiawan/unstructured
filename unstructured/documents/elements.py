@@ -138,6 +138,8 @@ class ElementMetadata:
     attached_to_filename: Optional[str] = None
     parent_id: Optional[Union[str, uuid.UUID, NoID, UUID]] = None
     category_depth: Optional[int] = None
+    fontsize: Optional[str] = None
+    fontname: Optional[str] = None
 
     # Page numbers currenlty supported for PDF, HTML and PPT documents
     page_number: Optional[int] = None

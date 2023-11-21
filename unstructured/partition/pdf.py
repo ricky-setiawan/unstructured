@@ -427,6 +427,31 @@ def _extract_text(item: LTItem) -> str:
     return "\n"
 
 
+def _extract_font(item: LTItem) -> Tuple[str, int]:
+    if hasattr(item, "fontname") and hasattr(item, "size"):
+        return item.fontname, item.size
+    elif isinstance(item, LTContainer):
+        font_name = []
+        font_size = []
+        for child in item:
+            result = _extract_font(child)
+            if result[0] != "":
+                font_name.append(result[0])
+            if result[1] != 0:
+                font_size.append(result[1])
+        most_freq_font_name: str = ""
+        most_freq_font_size: int = 0
+        if len(font_name) > 0:
+            most_freq_font_name = max(set(font_name), key=font_name.count)
+        if len(font_size) > 0:
+            most_freq_font_size: int = max(set(font_size), key=font_size.count)
+        return most_freq_font_name, round(most_freq_font_size)
+
+    elif isinstance(item, (LTTextBox, LTImage)):
+        return "", 0
+    return "", 0
+
+
 def _process_pdfminer_pages(
     fp: BinaryIO,
     filename: str = "",
@@ -454,6 +479,8 @@ def _process_pdfminer_pages(
                 _text = _extract_text(obj)
                 _text_snippets = re.split(PARAGRAPH_PATTERN, _text)
 
+            _font_name, _font_size = _extract_font(obj)
+
             for _text in _text_snippets:
                 _text = clean_extra_whitespace(_text)
                 if _text.strip():
@@ -477,6 +504,8 @@ def _process_pdfminer_pages(
                         page_number=i + 1,
                         coordinates=coordinates_metadata,
                         last_modified=metadata_last_modified,
+                        fontname=_font_name,
+                        fontsize=_font_size
                     )
                     page_elements.append(element)
         list_item = 0
@@ -640,7 +669,7 @@ def _add_pytesseract_bboxes_to_elements(
         if box_idx + char_count > len(boxes):
             break
         _points, char_count = _get_element_box(
-            boxes=boxes[box_idx : box_idx + char_count],  # noqa
+            boxes=boxes[box_idx: box_idx + char_count],  # noqa
             char_count=char_count,
         )
         box_idx += char_count
